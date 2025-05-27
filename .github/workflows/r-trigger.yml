@@ -4,7 +4,8 @@ on:
 
 jobs:
   run-r-function:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
+    container: ghcr.io/${{ github.repository }}/r-faasr:latest
     steps:
       - uses: actions/checkout@v3
       
@@ -13,15 +14,25 @@ jobs:
         with:
           python-version: '3.x'
       
-      - name: Set up R
-        uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: 'release'
+      # R is already installed in the container, skip R setup
       
-      - name: Install R system dependencies
+      - name: Install additional system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev
+          apt-get update
+          apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev
+
+      - name: Install missing R packages only
+        run: |
+          Rscript -e '
+          options(repos = c(CRAN = "https://packagemanager.rstudio.com/all/__linux__/focal/latest"))
+          pkgs <- c("sodium", "minioclient", "FaaSr", "credentials")
+          missing_pkgs <- pkgs[!pkgs %in% installed.packages()[,"Package"]]
+          if(length(missing_pkgs) > 0) {
+            install.packages(missing_pkgs, type="binary", dependencies=TRUE)
+          }
+          cat("Missing packages installed:", paste(missing_pkgs, collapse=", "))
+          cat("All available packages:", paste(sort(installed.packages()[,"Package"]), collapse=", "))
+          '
 
       - name: Make Python script executable
         run: chmod +x faasr_trigger.py
@@ -30,5 +41,11 @@ jobs:
         run: |
           ./faasr_trigger.py --script rscript.r
         env:
-          # Add any environment variables needed for your R script
-          R_LIBS_USER: ${{ github.workspace }}/R/library 
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Verify execution
+        run: |
+          if [ $? -ne 0 ]; then
+            echo "R script execution failed"
+            exit 1
+          fi 

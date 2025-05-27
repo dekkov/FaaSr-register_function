@@ -1,0 +1,16 @@
+# Add this workflow to build your container
+name: Build Custom R Container
+on:
+  push:
+    paths: ['Dockerfile']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}/r-faasr:latest
