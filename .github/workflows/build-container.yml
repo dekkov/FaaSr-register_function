@@ -1,8 +1,7 @@
 # Add this workflow to build your container
 name: Build Custom R Container
 on:
-  push:
-    paths: ['Dockerfile']
+  workflow_dispatch:  # Manual trigger only
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -9,43 +9,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
+      # R and packages are already installed in the container
       
-      # R is already installed in the container, skip R setup
-      
-      - name: Install additional system dependencies
-        run: |
-          apt-get update
-          apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev
-
-      - name: Install missing R packages only
-        run: |
-          Rscript -e '
-          options(repos = c(CRAN = "https://packagemanager.rstudio.com/all/__linux__/focal/latest"))
-          pkgs <- c("sodium", "minioclient", "FaaSr", "credentials")
-          missing_pkgs <- pkgs[!pkgs %in% installed.packages()[,"Package"]]
-          if(length(missing_pkgs) > 0) {
-            install.packages(missing_pkgs, type="binary", dependencies=TRUE)
-          }
-          cat("Missing packages installed:", paste(missing_pkgs, collapse=", "))
-          cat("All available packages:", paste(sort(installed.packages()[,"Package"]), collapse=", "))
-          '
-
-      - name: Make Python script executable
-        run: chmod +x faasr_trigger.py
+      - name: Make R script executable
+        run: chmod +x rscript.r
       
       - name: Run R script
         run: |
-          ./faasr_trigger.py --script rscript.r
+          Rscript rscript.r
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Verify execution
         run: |
-          if [ $? -ne 0 ]; then
+          if [ $? -eq 0 ]; then
+            echo "R script executed successfully"
+          else
             echo "R script execution failed"
             exit 1
           fi 
