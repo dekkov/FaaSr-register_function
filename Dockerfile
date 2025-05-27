@@ -20,8 +20,8 @@ ENV LIBARROW_BINARY=true
 ENV ARROW_USE_PKG_CONFIG=false
 ENV NOT_CRAN=false
 
-# Install your specific R packages with binary preference
-RUN Rscript -e "install.packages(c('devtools', 'sodium', 'minioclient', 'FaaSr', 'credentials'), dependencies=TRUE, type='binary')"
+# Install your specific R packages (remove type='binary')
+RUN Rscript -e "install.packages(c('devtools', 'sodium', 'minioclient', 'FaaSr', 'credentials'), dependencies=TRUE)"
 
 # Verify installations
 RUN Rscript -e "print(installed.packages()[,c('Package', 'Version')])"
