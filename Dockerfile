@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set CRAN mirror
-RUN echo 'options(repos = c(CRAN = "https://packagemanager.rstudio.com/all/__linux__/focal/latest"))' >> /etc/R/Rprofile.site
+RUN mkdir -p /usr/local/lib/R/etc && \
+    echo 'options(repos = c(CRAN = "https://packagemanager.rstudio.com/all/__linux__/focal/latest"))' >> /usr/local/lib/R/etc/Rprofile.site
 
 # Install your specific R packages
 RUN Rscript -e "install.packages(c('devtools', 'sodium', 'minioclient', 'FaaSr', 'credentials'), dependencies=TRUE)"
