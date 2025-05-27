@@ -1,0 +1,34 @@
+name: R Function Trigger
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  run-r-function:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+      
+      - name: Install R system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev
+
+      - name: Make Python script executable
+        run: chmod +x faasr_trigger.py
+      
+      - name: Run R script
+        run: |
+          ./faasr_trigger.py --script rscript.r
+        env:
+          # Add any environment variables needed for your R script
+          R_LIBS_USER: ${{ github.workspace }}/R/library 

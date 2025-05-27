@@ -1,83 +1,109 @@
+#!/usr/bin/env python3
+
+import argparse
 import subprocess
 import sys
 import os
+import json
 
-def run_r_script(script_path):
+def run_r_setup():
+    """Set up R environment with necessary repositories"""
+    setup_cmd = [
+        "Rscript",
+        "-e",
+        'options(repos = c(CRAN = "https://cloud.r-project.org")); options(timeout=360);'
+    ]
+    try:
+        subprocess.run(setup_cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error setting up R environment: {e}")
+        print(f"Setup error: {e.stderr}")
+        sys.exit(1)
+
+def run_r_script(script_path, function_names=None):
     """
-    Run an R script and capture its output
+    Execute an R script with specified functions
     
     Args:
         script_path (str): Path to the R script
-        
-    Returns:
-        tuple: Return code and output from the R script
+        function_names (list): List of function names to execute (optional)
     """
+    if not os.path.exists(script_path):
+        print(f"Error: R script not found at {script_path}")
+        sys.exit(1)
+
+    # First run the R setup
+    run_r_setup()
+    
+    # Prepare R command
+    r_cmd = ["Rscript"]
+    
+    # Add setup options directly before running the script
+    r_cmd.extend([
+        "-e",
+        'options(repos = c(CRAN = "https://cloud.r-project.org")); options(timeout=360);'
+    ])
+    
+    # Add the script path
+    r_cmd.append(script_path)
+    
+    # If specific functions are provided, pass them as arguments
+    if function_names:
+        r_cmd.extend(function_names)
+
     try:
-        # Check if the R script exists
-        if not os.path.exists(script_path):
-            raise FileNotFoundError(f"R script not found: {script_path}")
-        
-        # Default R installation paths on Windows
-        possible_r_paths = [
-            r"C:\Program Files\R\R-4.3.2\bin\Rscript.exe",
-            r"C:\Program Files\R\R-4.3.1\bin\Rscript.exe",
-            r"C:\Program Files\R\R-4.3.0\bin\Rscript.exe"
-        ]
-        
-        # Find the first existing Rscript executable
-        rscript_path = None
-        for path in possible_r_paths:
-            if os.path.exists(path):
-                rscript_path = path
-                break
-                
-        if rscript_path is None:
-            raise FileNotFoundError("Could not find Rscript.exe. Please ensure R is installed and provide the correct path.")
-        
-        # Run the R script using Rscript
-        process = subprocess.Popen(
-            [rscript_path, script_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
+        # Execute the R script
+        process = subprocess.run(
+            r_cmd,
+            check=True,
+            text=True,
+            capture_output=True
         )
+        print(process.stdout)
+        if process.stderr:
+            print(process.stderr)
         
-        # Get the output and error messages
-        output, error = process.communicate()
-        
-        # Print the output
-        if output:
-            print("Output from R script:")
-            print(output)
-            
-        # Print any errors
-        if error:
-            print("Errors/Warnings from R script:")
-            print(error)
-            
-        return process.returncode, output
-        
-    except FileNotFoundError as e:
-        print(f"Error: {e}")
-        return 1, None
     except subprocess.CalledProcessError as e:
-        print(f"Error running R script: {e}")
-        return e.returncode, None
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        return 1, None
+        print(f"Error executing R script: {e}")
+        print(f"R script output: {e.stdout}")
+        print(f"R script error: {e.stderr}")
+        sys.exit(1)
+
+def main():
+    parser = argparse.ArgumentParser(description="Execute R functions from a script")
+    parser.add_argument(
+        "--script",
+        "-s",
+        required=True,
+        help="Path to the R script file"
+    )
+    parser.add_argument(
+        "--functions",
+        "-f",
+        nargs="+",
+        help="Names of R functions to execute (optional)"
+    )
+    parser.add_argument(
+        "--config",
+        "-c",
+        help="Path to JSON configuration file (optional)"
+    )
+
+    args = parser.parse_args()
+
+    # If config file is provided, read it
+    if args.config:
+        try:
+            with open(args.config, 'r') as f:
+                config = json.load(f)
+                # You can extend this to handle more configuration options
+                if 'functions' in config:
+                    args.functions = config['functions']
+        except Exception as e:
+            print(f"Error reading config file: {e}")
+            sys.exit(1)
+
+    run_r_script(args.script, args.functions)
 
 if __name__ == "__main__":
-    # Default script path
-    script_path = "rscript.r"
-    
-    # Allow script path to be specified as command line argument
-    if len(sys.argv) > 1:
-        script_path = sys.argv[1]
-    
-    
-    # Run the R script
-    return_code, output = run_r_script(script_path)
-    
-    # Exit with the appropriate return code
-    sys.exit(return_code)
+    main()
