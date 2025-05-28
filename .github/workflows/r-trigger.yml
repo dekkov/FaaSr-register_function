@@ -4,7 +4,7 @@ on:
 
 jobs:
   run-r-function:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
     container: ghcr.io/${{ github.repository }}/r-faasr:latest
     steps:
       - uses: actions/checkout@v3
