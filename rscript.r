@@ -133,3 +133,4 @@ faasr_register_workflow_github_repo_question <- function(check, repo){
 # Now run your script
 faasr_tutorial <- faasr(json_path="test_workflow.json", env="faasr_env.txt")
 faasr_tutorial$register_workflow()
+faasr_tutorial$invoke_workflow()
