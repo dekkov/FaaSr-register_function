@@ -116,12 +116,6 @@
             "tidyverse",
             "glue"
         ]
-    },
-    "FunctionGitHubPackage": {
-        "get_target_data": [],
-        "create_oxygen_forecast_rw": [],
-        "create_temperature_forecast_rw": [],
-        "combine_forecasts_rw": []
     }
 }
 
