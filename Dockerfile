@@ -51,9 +51,4 @@ RUN Rscript -e "install.packages(c('base64enc', 'paws.storage', 'askpass'), depe
 RUN Rscript -e "devtools::install_github('FaaSr/FaaSr-package',force=TRUE)"
 
 
-# Create a build verification file
-RUN echo 'Container built successfully on:' $(date) > /container-info.txt && \
-    echo 'FaaSr version:' >> /container-info.txt && \
-    Rscript -e "cat(as.character(packageVersion('FaaSr')))" >> /container-info.txt
-
 WORKDIR /workspace
