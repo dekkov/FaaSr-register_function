@@ -11,6 +11,9 @@ jobs:
       
       # R and packages are already installed in the container
       
+      - name: Install FaaSr package
+        run: Rscript -e "install.packages('FaaSr', repos='https://cloud.r-project.org')"
+      
       - name: Make R script executable
         run: chmod +x rscript.r
       
@@ -18,7 +21,7 @@ jobs:
         run: |
           Rscript rscript.r
         env:
-          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PAT: ${{ secrets.PAT }}
         
       - name: Verify execution
         run: |
