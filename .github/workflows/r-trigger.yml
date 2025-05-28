@@ -9,22 +9,38 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      # R and packages are already installed in the container
+      - name: Install missing FaaSr package
+        run: |
+          echo "Installing FaaSr and dependencies..."
+          Rscript -e "
+          # Install FaaSr and any missing dependencies
+          install.packages(c('FaaSr', 'jsonlite', 'cli', 'httr', 'glue', 'base64enc', 'paws.storage'), 
+                          dependencies=TRUE, 
+                          repos='https://cloud.r-project.org')
+          
+          # Verify installation
+          library(FaaSr)
+          cat('✓ FaaSr installed and loaded successfully\n')
+          "
       
-      - name: Make R script executable
-        run: chmod +x rscript.r
+      - name: Verify required files exist
+        run: |
+          if [ ! -f "test_workflow.json" ]; then
+            echo "Error: test_workflow.json not found"
+            exit 1
+          fi
+          if [ ! -f "faasr_env" ]; then
+            echo "Error: faasr_env not found"
+            exit 1
+          fi
+          if [ ! -f "rscript.r" ]; then
+            echo "Error: rscript.r not found"
+            exit 1
+          fi
+          echo "✓ All required files found"
       
       - name: Run R script
         run: |
           Rscript rscript.r
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-        
-      - name: Verify execution
-        run: |
-          if [ $? -eq 0 ]; then
-            echo "R script executed successfully"
-          else
-            echo "R script execution failed"
-            exit 1
-          fi 
