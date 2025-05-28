@@ -34,7 +34,24 @@ ENV ARROW_USE_PKG_CONFIG=false
 ENV NOT_CRAN=false
 
 # Install R packages with better error handling and explicit dependencies
-RUN Rscript -e "options(warn = 2); cat('Installing base dependencies...\n'); install.packages(c('jsonlite', 'cli', 'glue'), dependencies=TRUE); cat('Installing crypto/network dependencies...\n'); install.packages(c('openssl', 'httr', 'curl'), dependencies=TRUE); cat('Installing sodium...\n'); install.packages('sodium', dependencies=TRUE); cat('Installing git dependencies...\n'); install.packages(c('credentials', 'gert'), dependencies=TRUE); cat('Installing devtools...\n'); install.packages('devtools', dependencies=TRUE); cat('Installing minioclient...\n'); install.packages('minioclient', dependencies=TRUE); cat('Installing additional dependencies...\n'); install.packages(c('base64enc', 'paws.storage', 'askpass'), dependencies=TRUE); cat('Installing FaaSr...\n'); install.packages('FaaSr', dependencies=TRUE); cat('Verifying FaaSr installation...\n'); library(FaaSr); cat('✓ FaaSr installed successfully! Version:', as.character(packageVersion('FaaSr')), '\n')"
+RUN Rscript -e "install.packages(c('jsonlite', 'cli', 'glue'), dependencies=TRUE, repos='https://cloud.r-project.org')"
+
+RUN Rscript -e "install.packages(c('openssl', 'httr', 'curl'), dependencies=TRUE, repos='https://cloud.r-project.org')"
+
+RUN Rscript -e "install.packages('sodium', dependencies=TRUE, repos='https://cloud.r-project.org')"
+
+RUN Rscript -e "install.packages(c('credentials', 'gert'), dependencies=TRUE, repos='https://cloud.r-project.org')"
+
+RUN Rscript -e "install.packages('devtools', dependencies=TRUE, repos='https://cloud.r-project.org')"
+
+RUN Rscript -e "install.packages('minioclient', dependencies=TRUE, repos='https://cloud.r-project.org')"
+
+RUN Rscript -e "install.packages(c('base64enc', 'paws.storage', 'askpass'), dependencies=TRUE, repos='https://cloud.r-project.org')"
+
+RUN Rscript -e "install.packages('FaaSr', dependencies=TRUE, repos='https://cloud.r-project.org')"
+
+# Verify FaaSr installation
+RUN Rscript -e "library(FaaSr); cat('✓ FaaSr installed successfully! Version:', as.character(packageVersion('FaaSr')), '\n')"
 
 # Create a build verification file
 RUN echo 'Container built successfully on:' $(date) > /container-info.txt && \
