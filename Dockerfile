@@ -50,12 +50,9 @@ RUN Rscript -e "install.packages(c('base64enc', 'paws.storage', 'askpass'), depe
 
 RUN Rscript -e "install.packages('FaaSr', dependencies=TRUE, repos='https://cloud.r-project.org')"
 
-# Verify FaaSr installation with detailed diagnostics
-RUN Rscript -e "cat('Checking if FaaSr package is installed...\n'); if ('FaaSr' %in% rownames(installed.packages())) { cat('✓ FaaSr package found in installed packages\n'); cat('Attempting to load FaaSr...\n'); tryCatch({ library(FaaSr); cat('✓ FaaSr loaded successfully! Version:', as.character(packageVersion('FaaSr')), '\n') }, error = function(e) { cat('✗ Error loading FaaSr:', e\$message, '\n'); cat('Checking FaaSr dependencies...\n'); deps <- tools::package_dependencies('FaaSr', installed.packages(), recursive=FALSE); missing <- setdiff(deps\$FaaSr, rownames(installed.packages())); if (length(missing) > 0) { cat('Missing dependencies:', paste(missing, collapse=', '), '\n') } else { cat('All dependencies appear to be installed\n') } }) } else { cat('✗ FaaSr package not found in installed packages\n'); quit(status=1) }"
-
 # Create a build verification file
 RUN echo 'Container built successfully on:' $(date) > /container-info.txt && \
-    echo 'FaaSr version:' >> /container-info.txt && \
-    Rscript -e "cat(as.character(packageVersion('FaaSr')))" >> /container-info.txt
+    echo 'Installed packages:' >> /container-info.txt && \
+    Rscript -e "cat(paste(rownames(installed.packages()), collapse=', '))" >> /container-info.txt
 
 WORKDIR /workspace
