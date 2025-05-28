@@ -1,0 +1,141 @@
+name: List Container Packages
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  list-packages:
+    runs-on: ubuntu-latest
+    container: ghcr.io/${{ github.repository }}/r-faasr:latest
+    steps:
+      - name: System Information
+        run: |
+          echo "=== SYSTEM INFORMATION ==="
+          echo "Container: ghcr.io/${{ github.repository }}/r-faasr:latest"
+          echo "OS Information:"
+          cat /etc/os-release
+          echo ""
+          echo "User: $(whoami)"
+          echo "Working Directory: $(pwd)"
+          echo "Home Directory: $HOME"
+          
+      - name: R Environment Information
+        run: |
+          echo "=== R ENVIRONMENT ==="
+          echo "R Version:"
+          R --version
+          echo ""
+          echo "R Library Paths:"
+          Rscript -e ".libPaths()"
+          echo ""
+          echo "R Session Info:"
+          Rscript -e "sessionInfo()"
+          
+      - name: List All Installed R Packages
+        run: |
+          echo "=== ALL INSTALLED R PACKAGES ==="
+          Rscript -e "
+          # Get all installed packages
+          installed <- installed.packages()
+          
+          cat('Total packages installed:', nrow(installed), '\n\n')
+          
+          # Create a nice formatted table
+          pkg_info <- data.frame(
+            Package = installed[, 'Package'],
+            Version = installed[, 'Version'],
+            LibPath = installed[, 'LibPath'],
+            stringsAsFactors = FALSE
+          )
+          
+          # Sort by package name
+          pkg_info <- pkg_info[order(pkg_info\$Package), ]
+          
+          # Print formatted output
+          cat('PACKAGE NAME', '\t\t', 'VERSION', '\t\t', 'LIBRARY PATH', '\n')
+          cat(paste(rep('=', 80), collapse=''), '\n')
+          
+          for(i in 1:nrow(pkg_info)) {
+            cat(sprintf('%-20s\t%-15s\t%s\n', 
+                pkg_info\$Package[i], 
+                pkg_info\$Version[i], 
+                pkg_info\$LibPath[i]))
+          }
+          "
+          
+      - name: Check Specific FaaSr-related Packages
+        run: |
+          echo "=== FAASR-RELATED PACKAGES CHECK ==="
+          Rscript -e "
+          # List of packages we're specifically interested in
+          target_packages <- c('FaaSr', 'devtools', 'sodium', 'minioclient', 
+                              'credentials', 'jsonlite', 'cli', 'httr', 'glue', 
+                              'base64enc', 'paws.storage', 'askpass')
+          
+          installed <- installed.packages()
+          
+          cat('Checking for specific packages:\n')
+          cat(paste(rep('=', 50), collapse=''), '\n')
+          
+          for(pkg in target_packages) {
+            if(pkg %in% rownames(installed)) {
+              version <- installed[pkg, 'Version']
+              cat(sprintf('✓ %-15s: %s\n', pkg, version))
+            } else {
+              cat(sprintf('✗ %-15s: NOT FOUND\n', pkg))
+            }
+          }
+          "
+          
+      - name: Test Package Loading
+        run: |
+          echo "=== PACKAGE LOADING TEST ==="
+          Rscript -e "
+          # Test loading key packages
+          test_packages <- c('FaaSr', 'jsonlite', 'cli', 'httr')
+          
+          cat('Testing package loading:\n')
+          cat(paste(rep('=', 40), collapse=''), '\n')
+          
+          for(pkg in test_packages) {
+            tryCatch({
+              library(pkg, character.only = TRUE)
+              cat(sprintf('✓ %s: Loaded successfully\n', pkg))
+            }, error = function(e) {
+              cat(sprintf('✗ %s: Failed to load - %s\n', pkg, e\$message))
+            })
+          }
+          "
+          
+      - name: Check Library Directories
+        run: |
+          echo "=== LIBRARY DIRECTORIES ==="
+          echo "Contents of R library directories:"
+          Rscript -e "
+          lib_paths <- .libPaths()
+          for(path in lib_paths) {
+            cat('\nLibrary path:', path, '\n')
+            if(dir.exists(path)) {
+              packages <- list.dirs(path, full.names = FALSE, recursive = FALSE)
+              packages <- packages[packages != '']
+              cat('Packages found:', length(packages), '\n')
+              if(length(packages) > 0) {
+                cat('First 10 packages:', paste(head(packages, 10), collapse=', '), '\n')
+                if('FaaSr' %in% packages) {
+                  cat('*** FaaSr found in this directory! ***\n')
+                }
+              }
+            } else {
+              cat('Directory does not exist\n')
+            }
+          }
+          "
+          
+      - name: Container Build Information
+        run: |
+          echo "=== CONTAINER BUILD INFO ==="
+          echo "Checking if container has build information:"
+          if [ -f "/container-info.txt" ]; then
+            cat /container-info.txt
+          else
+            echo "No container build info found"
+          fi
